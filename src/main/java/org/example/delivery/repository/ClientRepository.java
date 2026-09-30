@@ -1,5 +1,6 @@
 package org.example.delivery.repository;
 
+import org.example.delivery.exception.BusinessException;
 import org.example.delivery.exception.DatabaseException;
 import org.example.delivery.model.Client;
 import org.example.delivery.util.DatabaseManager;
@@ -16,6 +17,7 @@ import java.util.Optional;
 public final class ClientRepository implements CrudRepository<Client> {
     private static final String BASE_SELECT =
             "SELECT id, full_name, phone, email, address FROM clients";
+    private static final String FOREIGN_KEY_VIOLATION = "23503";
 
     @Override
     public Client save(Client client) {
@@ -34,8 +36,7 @@ public final class ClientRepository implements CrudRepository<Client> {
                 if (!resultSet.next()) {
                     throw new DatabaseException("База данных не вернула ID нового клиента.", null);
                 }
-                client.setId(resultSet.getLong("id"));
-                return client;
+                return client.withId(resultSet.getLong("id"));
             }
         } catch (SQLException exception) {
             throw new DatabaseException("Ошибка создания клиента.", exception);
@@ -104,7 +105,10 @@ public final class ClientRepository implements CrudRepository<Client> {
                 throw new DatabaseException("Клиент с ID " + id + " не найден.", null);
             }
         } catch (SQLException exception) {
-            throw new DatabaseException("Ошибка удаления клиента. Возможно, у него есть заказы.", exception);
+            if (FOREIGN_KEY_VIOLATION.equals(exception.getSQLState())) {
+                throw new BusinessException("Клиента нельзя удалить: сначала удалите его заказы.");
+            }
+            throw new DatabaseException("Ошибка удаления клиента.", exception);
         }
     }
 

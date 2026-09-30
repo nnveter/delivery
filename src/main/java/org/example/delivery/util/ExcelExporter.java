@@ -23,7 +23,10 @@ public final class ExcelExporter {
             }
             return path;
         } catch (IOException exception) {
-            throw new IllegalStateException("Не удалось экспортировать данные в Excel.", exception);
+            throw new IllegalStateException(
+                    "Не удалось сохранить файл " + path.toAbsolutePath()
+                            + ". Проверьте, что папка существует и файл не открыт в Excel.",
+                    exception);
         }
     }
 

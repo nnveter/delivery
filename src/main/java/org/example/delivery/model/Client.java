@@ -3,11 +3,11 @@ package org.example.delivery.model;
 import java.util.Objects;
 
 public final class Client {
-    private Long id;
-    private String fullName;
-    private String phone;
-    private String email;
-    private String address;
+    private final Long id;
+    private final String fullName;
+    private final String phone;
+    private final String email;
+    private final String address;
 
     public Client(Long id, String fullName, String phone, String email, String address) {
         this.id = id;
@@ -25,8 +25,8 @@ public final class Client {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public Client withId(long newId) {
+        return new Client(newId, fullName, phone, email, address);
     }
 
     public String getFullName() {
@@ -66,7 +66,7 @@ public final class Client {
         if (!(other instanceof Client client)) {
             return false;
         }
-        return Objects.equals(id, client.id);
+        return id != null && id.equals(client.id);
     }
 
     @Override

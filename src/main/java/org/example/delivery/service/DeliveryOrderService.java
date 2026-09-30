@@ -55,9 +55,10 @@ public final class DeliveryOrderService {
         ensureClientExists(clientId);
         ensureDifferentAddresses(pickupAddress, deliveryAddress);
         DeliveryOrder updated = new DeliveryOrder(
-                id, clientId, current.getClientName(), pickupAddress, deliveryAddress,
+                id, clientId, null, pickupAddress, deliveryAddress,
                 description, weight, price, current.getCreatedAt(), current.getStatus());
-        return orderRepository.update(updated);
+        orderRepository.update(updated);
+        return findById(id);
     }
 
     public void delete(long id) {
@@ -70,13 +71,8 @@ public final class DeliveryOrderService {
     }
 
     public DeliveryOrder changeStatus(long id, DeliveryStatus target) {
-        DeliveryOrder order = findById(id);
-        try {
-            order.changeStatus(target);
-        } catch (IllegalStateException exception) {
-            throw new BusinessException(exception.getMessage());
-        }
-        return orderRepository.update(order);
+        orderRepository.changeStatus(id, target);
+        return findById(id);
     }
 
     public List<DeliveryOrder> search(String query) {

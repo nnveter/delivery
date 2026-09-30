@@ -74,6 +74,8 @@ public final class ConsoleApplication {
                 };
             } catch (DatabaseException | BusinessException | EntityNotFoundException | IllegalArgumentException exception) {
                 System.out.println("Ошибка: " + exception.getMessage());
+            } catch (RuntimeException exception) {
+                System.out.println("Непредвиденная ошибка: " + exception.getMessage());
             }
         }
         System.out.println("Работа завершена.");

@@ -1,6 +1,8 @@
 package org.example.delivery.repository;
 
+import org.example.delivery.exception.BusinessException;
 import org.example.delivery.exception.DatabaseException;
+import org.example.delivery.exception.EntityNotFoundException;
 import org.example.delivery.model.DeliveryOrder;
 import org.example.delivery.model.DeliveryStatus;
 import org.example.delivery.util.DatabaseManager;
@@ -33,7 +35,8 @@ public final class DeliveryOrderRepository implements CrudRepository<DeliveryOrd
                 """;
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            fillStatement(statement, order);
+            fillEditableFields(statement, order);
+            statement.setString(7, order.getStatus().name());
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (!resultSet.next()) {
                     throw new DatabaseException("База данных не вернула ID нового заказа.", null);
@@ -70,13 +73,13 @@ public final class DeliveryOrderRepository implements CrudRepository<DeliveryOrd
         String sql = """
                 UPDATE delivery_orders
                 SET client_id = ?, pickup_address = ?, delivery_address = ?,
-                    description = ?, weight = ?, price = ?, status = ?
+                    description = ?, weight = ?, price = ?
                 WHERE id = ?
                 """;
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            fillStatement(statement, order);
-            statement.setLong(8, order.getId());
+            fillEditableFields(statement, order);
+            statement.setLong(7, order.getId());
             if (statement.executeUpdate() == 0) {
                 throw new DatabaseException("Заказ с ID " + order.getId() + " не найден.", null);
             }
@@ -97,6 +100,48 @@ public final class DeliveryOrderRepository implements CrudRepository<DeliveryOrd
             }
         } catch (SQLException exception) {
             throw new DatabaseException("Ошибка удаления заказа.", exception);
+        }
+    }
+
+    public void changeStatus(long id, DeliveryStatus target) {
+        try (Connection connection = DatabaseManager.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                DeliveryStatus current = lockStatus(connection, id);
+                if (!current.canTransitionTo(target)) {
+                    throw new BusinessException(
+                            "Недопустимый переход статуса: %s -> %s".formatted(current, target));
+                }
+                writeStatus(connection, id, target);
+                connection.commit();
+            } catch (SQLException | RuntimeException exception) {
+                connection.rollback();
+                throw exception;
+            }
+        } catch (SQLException exception) {
+            throw new DatabaseException("Ошибка смены статуса заказа.", exception);
+        }
+    }
+
+    private DeliveryStatus lockStatus(Connection connection, long id) throws SQLException {
+        String sql = "SELECT status FROM delivery_orders WHERE id = ? FOR UPDATE";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, id);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    throw new EntityNotFoundException("Заказ с ID " + id + " не найден.");
+                }
+                return DeliveryStatus.valueOf(resultSet.getString("status"));
+            }
+        }
+    }
+
+    private void writeStatus(Connection connection, long id, DeliveryStatus status) throws SQLException {
+        String sql = "UPDATE delivery_orders SET status = ? WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, status.name());
+            statement.setLong(2, id);
+            statement.executeUpdate();
         }
     }
 
@@ -203,14 +248,13 @@ public final class DeliveryOrderRepository implements CrudRepository<DeliveryOrd
         }
     }
 
-    private void fillStatement(PreparedStatement statement, DeliveryOrder order) throws SQLException {
+    private void fillEditableFields(PreparedStatement statement, DeliveryOrder order) throws SQLException {
         statement.setLong(1, order.getClientId());
         statement.setString(2, order.getPickupAddress());
         statement.setString(3, order.getDeliveryAddress());
         statement.setString(4, order.getDescription());
         statement.setBigDecimal(5, order.getWeight());
         statement.setBigDecimal(6, order.getPrice());
-        statement.setString(7, order.getStatus().name());
     }
 
     private DeliveryOrder map(ResultSet resultSet) throws SQLException {

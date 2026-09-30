@@ -38,8 +38,8 @@
 
 ```bash
 psql -U postgres -c "CREATE DATABASE delivery_db;"
-psql --encoding=UTF8 -U postgres -d delivery_db -v ON_ERROR_STOP=1 -f database/schema.sql
-psql --encoding=UTF8 -U postgres -d delivery_db -v ON_ERROR_STOP=1 -f database/seed.sql
+psql -U postgres -d delivery_db -v ON_ERROR_STOP=1 -f database/schema.sql
+psql -U postgres -d delivery_db -v ON_ERROR_STOP=1 -f database/seed.sql
 ```
 
 Приложение автоматически читает `.env` из корня проекта. Переменные окружения Windows и Java-системные свойства имеют приоритет над `.env`.

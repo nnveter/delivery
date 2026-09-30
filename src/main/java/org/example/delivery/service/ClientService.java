@@ -34,11 +34,7 @@ public final class ClientService {
 
     public void delete(long id) {
         findById(id);
-        try {
-            clientRepository.deleteById(id);
-        } catch (RuntimeException exception) {
-            throw new BusinessException("Клиента нельзя удалить: сначала удалите его заказы.");
-        }
+        clientRepository.deleteById(id);
     }
 
     public List<Client> search(String query) {
