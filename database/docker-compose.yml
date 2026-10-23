@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: delivery-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-delivery_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      # Наружу отдаём 55432, чтобы не конфликтовать с локальным PostgreSQL (5432).
+      # JDBC-строка для JavaFX-клиента: jdbc:postgresql://localhost:55432/delivery_db
+      - "${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - delivery-pgdata:/var/lib/postgresql/data
+      # Скрипты из database/ выполняются автоматически при ПЕРВОМ запуске пустого контейнера
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-delivery_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  delivery-pgdata:

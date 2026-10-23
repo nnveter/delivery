@@ -34,6 +34,8 @@
 
 ## Запуск PostgreSQL
 
+### Вариант 1. Локальный PostgreSQL
+
 Создай базу данных `delivery_db`, затем выполни скрипты из корня проекта:
 
 ```bash
@@ -41,6 +43,22 @@ psql -U postgres -c "CREATE DATABASE delivery_db;"
 psql -U postgres -d delivery_db -v ON_ERROR_STOP=1 -f database/schema.sql
 psql -U postgres -d delivery_db -v ON_ERROR_STOP=1 -f database/seed.sql
 ```
+
+### Вариант 2. Docker (контейнер с базой КР №1)
+
+Нужен установленный Docker Desktop. Из папки `database/`:
+
+```bash
+docker compose up -d --wait
+```
+
+- PostgreSQL поднимется на порту **55432** (внутри контейнера — стандартный 5432);
+- `schema.sql` и `seed.sql` применяются автоматически при первом запуске пустого контейнера;
+- данные сохраняются в volume `delivery-pgdata` — `docker compose down` их не удаляет;
+- для остановки: `docker compose down`.
+
+JDBC-строка для этого варианта: `jdbc:postgresql://localhost:55432/delivery_db`
+(указывается в `javafx-client/src/main/resources/database.properties`).
 
 Приложение автоматически читает `.env` из корня проекта. Переменные окружения Windows и Java-системные свойства имеют приоритет над `.env`.
 
