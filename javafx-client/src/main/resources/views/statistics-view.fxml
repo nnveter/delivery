@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.example.delivery.fx.controller.StatisticsController"
+      styleClass="dialog-root" prefWidth="460">
+
+    <Label text="Статистика системы доставки" styleClass="form-title"/>
+    <Label text="Показатели рассчитаны по данным базы PostgreSQL (КР №1)" styleClass="hint-label"/>
+
+    <GridPane styleClass="form-grid" vgap="10" hgap="12">
+        <columnConstraints>
+            <ColumnConstraints prefWidth="280"/>
+            <ColumnConstraints prefWidth="150"/>
+        </columnConstraints>
+
+        <Label text="Всего клиентов" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <Label fx:id="statTotalClients" styleClass="stat-value" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+        <Label text="Всего заказов" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <Label fx:id="statTotalOrders" styleClass="stat-value" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+        <Label text="Активных заказов" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <Label fx:id="statActiveOrders" styleClass="stat-value" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+        <Label text="Доставлено заказов" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+        <Label fx:id="statDelivered" styleClass="stat-value" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+        <Label text="Отменено заказов" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+        <Label fx:id="statCancelled" styleClass="stat-value" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+        <Label text="Выручка по доставленным" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+        <Label fx:id="statRevenue" styleClass="stat-value" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+        <Label text="Средняя стоимость заказа" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+        <Label fx:id="statAvgPrice" styleClass="stat-value" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+
+        <Label text="Средний вес заказа" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+        <Label fx:id="statAvgWeight" styleClass="stat-value" GridPane.rowIndex="7" GridPane.columnIndex="1"/>
+
+        <Label text="Минимальная стоимость" GridPane.rowIndex="8" GridPane.columnIndex="0"/>
+        <Label fx:id="statMinPrice" styleClass="stat-value" GridPane.rowIndex="8" GridPane.columnIndex="1"/>
+
+        <Label text="Максимальная стоимость" GridPane.rowIndex="9" GridPane.columnIndex="0"/>
+        <Label fx:id="statMaxPrice" styleClass="stat-value" GridPane.rowIndex="9" GridPane.columnIndex="1"/>
+
+        <Label text="Доля доставленных заказов" GridPane.rowIndex="10" GridPane.columnIndex="0"/>
+        <Label fx:id="statDeliveredShare" styleClass="stat-value" GridPane.rowIndex="10" GridPane.columnIndex="1"/>
+    </GridPane>
+
+    <HBox styleClass="dialog-buttons">
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Закрыть" onAction="#onClose" cancelButton="true"/>
+    </HBox>
+</VBox>
