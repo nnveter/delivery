@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Служба доставки — управление заказами и клиентами">
+    <title>Служба доставки</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/styles.css?v=delivery-1">
+</head>
+<body>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<section id="login-view" class="login-shell">
+    <form id="login-form" class="card login-card" autocomplete="on">
+        <div class="brand-mark">СД</div>
+        <h1>Служба доставки</h1>
+        <p class="muted">Заказы, клиенты и аналитика</p>
+        <label>Email
+            <input id="login-email" type="email" autocomplete="username" required maxlength="254">
+        </label>
+        <label>Пароль
+            <input id="login-password" type="password" autocomplete="current-password" required maxlength="128">
+        </label>
+        <button class="primary" type="submit">Войти</button>
+        <p id="login-error" class="error" hidden></p>
+    </form>
+</section>
+
+<div id="app-view" class="app-shell" hidden>
+    <aside class="sidebar">
+        <div class="brand"><span class="brand-mark small">СД</span><strong>Служба доставки</strong></div>
+        <nav id="navigation">
+            <button data-tab="dashboard" class="nav-item active">Аналитика</button>
+            <button data-tab="orders" class="nav-item">Заказы</button>
+            <button data-tab="clients" class="nav-item">Клиенты</button>
+            <button data-tab="users" class="nav-item admin-only">Пользователи</button>
+            <button data-tab="audit" class="nav-item admin-only">Аудит</button>
+            <a href="/swagger-ui.html" class="nav-item nav-link admin-only" target="_blank" rel="noopener noreferrer">Swagger API ↗</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div id="current-user" class="current-user"></div>
+            <button id="change-password" class="secondary full">Сменить пароль</button>
+            <button id="logout" class="danger-outline full">Выйти</button>
+        </div>
+    </aside>
+
+    <main class="content">
+        <header class="topbar">
+            <div>
+                <h2 id="page-title">Аналитика</h2>
+                <p id="page-subtitle" class="muted">Сводные показатели по заказам</p>
+            </div>
+            <span id="connection-state" class="badge success">API подключён</span>
+        </header>
+
+        <section id="tab-dashboard" class="tab active">
+            <div id="metric-grid" class="metric-grid"></div>
+            <div class="grid-3">
+                <article class="card"><h3>По клиентам</h3><div id="chart-clients" class="bar-list"></div></article>
+                <article class="card"><h3>По статусам</h3><div id="chart-status" class="bar-list"></div></article>
+                <article class="card"><h3>По приоритету</h3><div id="chart-priority" class="bar-list"></div></article>
+            </div>
+        </section>
+
+        <section id="tab-orders" class="tab">
+            <div class="toolbar card">
+                <div class="search-wrap">
+                    <input id="order-search" type="search" maxlength="500"
+                           placeholder="Книга клиент:Иванов статус:в_пути хрупкий:да цена>=500 приоритет:высокий">
+                    <button id="search-orders" class="primary">Найти</button>
+                </div>
+                <div class="toolbar-actions">
+                    <button id="add-order" class="primary editor-only">+ Заказ</button>
+                    <button id="bulk-action" class="secondary editor-only">Массовая операция</button>
+                    <button id="import-csv" class="secondary editor-only">Импорт CSV</button>
+                    <button id="export-csv" class="secondary">Экспорт CSV</button>
+                </div>
+                <details class="filter-help">
+                    <summary>Подсказка по умному фильтру</summary>
+                    <code>клиент:Петрова · статус:создан|подтвержден|назначен|забран|в_пути|доставлен|отменен · хрупкий:да · цена&gt;=1000 · вес&lt;3 · приоритет:низкий|обычный|высокий|срочный · тег:срочно · архив:да|нет|все · "текст в кавычках"</code>
+                </details>
+            </div>
+            <div class="card table-card">
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr>
+                            <th class="editor-only"><input id="select-all-orders" type="checkbox" aria-label="Выбрать все"></th>
+                            <th class="sortable" data-sort="number">Номер</th>
+                            <th class="sortable" data-sort="client">Клиент</th>
+                            <th>Маршрут</th>
+                            <th class="sortable" data-sort="weight">Вес, кг</th>
+                            <th class="sortable" data-sort="price">Цена, ₽</th>
+                            <th class="sortable" data-sort="status">Статус</th>
+                            <th class="sortable" data-sort="priority">Приоритет</th>
+                            <th>Теги</th>
+                            <th class="sortable" data-sort="created">Создан</th>
+                            <th>Действия</th>
+                        </tr></thead>
+                        <tbody id="orders-body"></tbody>
+                    </table>
+                </div>
+                <div class="pager">
+                    <button id="orders-prev" class="secondary">←</button>
+                    <span id="orders-page"></span>
+                    <button id="orders-next" class="secondary">→</button>
+                    <select id="orders-size" aria-label="Размер страницы">
+                        <option value="10">10</option><option value="20" selected>20</option><option value="50">50</option><option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-clients" class="tab">
+            <div class="toolbar card">
+                <p>Справочник клиентов. Клиента нельзя удалить — только отключить.</p>
+                <button id="add-client" class="primary admin-only">+ Клиент</button>
+            </div>
+            <div class="card table-card"><div class="table-scroll"><table>
+                <thead><tr><th>ФИО</th><th>Телефон</th><th>Email</th><th>Адрес</th><th>Активен</th><th class="admin-only">Действия</th></tr></thead>
+                <tbody id="clients-body"></tbody>
+            </table></div></div>
+        </section>
+
+        <section id="tab-users" class="tab admin-only">
+            <div class="toolbar card"><button id="add-user" class="primary">+ Пользователь</button></div>
+            <div class="card table-card">
+                <div class="table-scroll"><table>
+                    <thead><tr><th>Email</th><th>Имя</th><th>Роли</th><th>Активен</th><th>Временный пароль</th><th>Действия</th></tr></thead>
+                    <tbody id="users-body"></tbody>
+                </table></div>
+                <div class="pager">
+                    <button id="users-prev" class="secondary">←</button><span id="users-page"></span><button id="users-next" class="secondary">→</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-audit" class="tab admin-only">
+            <div class="toolbar card search-wrap">
+                <input id="audit-search" type="search" maxlength="200" placeholder="Пользователь, тип события, описание, correlation ID">
+                <select id="audit-sort" aria-label="Сортировка">
+                    <option value="occurred,desc">Сначала новые</option>
+                    <option value="occurred,asc">Сначала старые</option>
+                    <option value="actor,asc">По пользователю</option>
+                    <option value="event,asc">По типу события</option>
+                </select>
+                <button id="search-audit" class="primary">Найти</button>
+            </div>
+            <div class="card table-card">
+                <div class="table-scroll"><table>
+                    <thead><tr><th>Дата</th><th>Пользователь</th><th>Событие</th><th>Сущность</th><th>Описание</th><th>Correlation ID</th></tr></thead>
+                    <tbody id="audit-body"></tbody>
+                </table></div>
+                <div class="pager">
+                    <button id="audit-prev" class="secondary">←</button><span id="audit-page"></span><button id="audit-next" class="secondary">→</button>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<dialog id="entity-dialog"><form id="entity-form" method="dialog" class="dialog-form"></form></dialog>
+
+<dialog id="notes-dialog">
+    <div class="dialog-form wide">
+        <div class="dialog-head"><h3 id="notes-title">Комментарии</h3><button data-close-dialog="notes-dialog" class="icon-button">×</button></div>
+        <div id="notes-list"></div>
+        <form id="note-form" class="editor-only">
+            <textarea id="note-body" maxlength="4000" required placeholder="Текст комментария"></textarea>
+            <label class="inline"><input id="note-pinned" type="checkbox"> Закрепить</label>
+            <button class="primary">Добавить комментарий</button>
+        </form>
+    </div>
+</dialog>
+
+<dialog id="csv-dialog">
+    <div class="dialog-form wide">
+        <div class="dialog-head"><h3>Импорт CSV</h3><button data-close-dialog="csv-dialog" class="icon-button">×</button></div>
+        <p class="muted">Колонки: orderNumber, clientPhone, pickupAddress, deliveryAddress, description, weight, price, fragile, status, tags (теги через «|»). Файл экспорта подходит для импорта.</p>
+        <input id="csv-file" type="file" accept=".csv,text/csv">
+        <label>Режим
+            <select id="csv-mode">
+                <option value="CREATE_ONLY">Только новые заказы</option>
+                <option value="UPSERT_BY_ORDER_NUMBER">Обновить существующие по номеру заказа</option>
+            </select>
+        </label>
+        <div class="button-row"><button id="csv-preview" class="secondary">1. Проверить</button><button id="csv-apply" class="primary" disabled>2. Применить</button></div>
+        <pre id="csv-result" class="result-box"></pre>
+    </div>
+</dialog>
+
+<script src="/app.js?v=delivery-1" defer></script>
+</body>
+</html>
